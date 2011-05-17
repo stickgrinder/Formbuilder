@@ -20,7 +20,7 @@ Create a controller named at your wish, and add the following code to it:
       ->add_text_field('name', 'Name')
       ->add_checkbox('happy', 'I am happy', TRUE, array('class'=>array('check', 'happy'), 'id'=>'mycheck'))
     ->close_group()
-    ->add_checkboxes('hero', 'My favorite comic hero:', 0, array(
+    ->add_checkboxes('hero', 'My favorite comic hero:', FB_R_CRB_LABEL_BEFORE, array(
       array (
         'label' => 'Superman',
         'value' => 'superman',
