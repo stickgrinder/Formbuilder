@@ -1,25 +1,26 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-/*
-* the class of the div wrapping the label and input element.
-* if you would not like it contained in a div, set the variable to NULL
-*/
-$config[ 'formbuilder_container_class' ] = 'formRow';
-/*
-* field error class is the class of the div wrapping field level error on validation failing
-*/
-$config[ 'formbuilder_error_class' ] = 'fieldError';
-/*
-* error position determines where the error is shown.
-* 1 is before the field label
-* 2 is between the label and the input
-* 3 is after the input
-*/
-$config[ 'formbuilder_error_position' ] = 3;
-/*
-* if auto_id is active and you set an html id for your form specifying
-* $params parameter in the open() method, all fields ids will be
-* automatically assigned as <form-id>-<field-name>, so that field "name"
-* in form which id is "myform" will have id "myform-name"
-*/
-$config[ 'formbuilder_auto_id' ] = TRUE;
+/**
+ * Constants definition
+ */
+define('FB_R_CRB_LABEL_NONE', FALSE);
+define('FB_R_CRB_LABEL_BEFORE', 11);
+define('FB_R_CRB_LABEL_AFTER', 21);
+
+define('FB_R_ERROR_HIDE', -1);
+define('FB_R_ERROR_SHOW_FORM', 0);
+define('FB_R_ERROR_SHOW_FIELD', 1);
+
+define('FB_R_ERRPOS_BEFOREOPEN', 3);
+define('FB_R_ERRPOS_AFTEROPEN', 13);
+define('FB_R_ERRPOS_BEFORECLOSE', 23);
+define('FB_R_ERRPOS_AFTERCLOSE', 33);
+
+
+$config['formbuilder_validator']['error_delimiter_tag'] = 'p';
+$config['formbuilder_validator']['error_delimiter_classes'] = 'errors global message';
+
+$config['formbuilder_renderer']['field_wrapper_tag'] = 'div';
+$config['formbuilder_renderer']['field_wrapper_classes'] = 'field-wrapper';
+$config['formbuilder_renderer']['error_show'] = FB_R_ERROR_SHOW_FORM;
+$config['formbuilder_renderer']['error_position'] = FB_R_ERRPOS_AFTEROPEN;
