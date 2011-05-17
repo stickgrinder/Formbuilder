@@ -1,214 +1,78 @@
-# Formbuilder
-## Lets you build forms easily, pre-populate them, show errors, and retain $_POST data
+# Formbuilder 2.0
 
-- Build a div wrapper, form label and input field with one php method call
-- Pre-Populate the form by setting formbuilder->defaults from your controller
-- Retain POST values on page refresh, form is auto populated with POST
-- Show each field error inline.
-- All of the above happens "automagically"
-- Or... build an entire form with one method, showing all table's fields
+This 2.0 version is a from-scratch rewrite of original @dperrymorrow's Formbuilder.
+Its goal is to create a full-fledged form-factory able to define, render and validate a form, providing at the very same time a fluent interface so that form creation is easy to write and read.
+Full doc will be available soon, in the meantime here is a simple example.
 
-## Configuration sparks/formbuilder/x.x/config/formbuilder.php
+Create a controller named at your wish, and add the following code to it:
 
-    /*
-    * the class of the div wrapping the label and input element.
-    * if you would not like it contained in a div, set the variable to NULL
-    */
-    $config[ 'formbuilder' ][ 'container_class' ] = 'formRow';
-    /*
-    * field error class is the class of the div wrapping field level error on validation failing
-    */
-    $config[ 'formbuilder' ][ 'error_class' ] = 'fieldError';
-    /*
-    * error position determines where the error is shown.
-    * 1 is before the field label
-    * 2 is between the label and the input
-    * 3 is after the input
-    */
-    $config[ 'formbuilder' ][ 'error_position' ] = 3;
-    /*
-    * if auto_id is active and you set an html id for your form specifying
-    * $params parameter in the open() method, all fields ids will be
-    * automatically assigned as <form-id>-<field-name>, so that field "name"
-    * in form which id is "myform" will have id "myform-name"
-    */
-    $config[ 'formbuilder' ][ 'auto_id' ] = TRUE;
+    $this->load->spark('formbuilder/2.0');
 
+    $form = $this->formbuilder->new_form();
 
-## Basic usage in your controller
+    $form->set_action('page/home')
+    ->add_file_field('image','Upload image')
+    ->add_group('account', 'Account')
+      ->add_text_field('username', 'Username', '', 'class="username red" id="username"', 'trim|required|minlength[5]|xss_clean')
+      ->add_password_field('password', 'Password', '', 'id="password"', 'trim|minlength[5]|xss_clean')
+      ->add_email_field('email', 'E-Mail', 'example@example.com', array(), TRUE)
+    ->add_group('profile', 'Profile')
+      ->add_text_field('name', 'Name')
+      ->add_checkbox('happy', 'I am happy', TRUE, array('class'=>array('check', 'happy'), 'id'=>'mycheck'))
+    ->close_group()
+    ->add_checkboxes('hero', 'My favorite comic hero:', 0, array(
+      array (
+        'label' => 'Superman',
+        'value' => 'superman',
+        'checked' => FALSE,
+      ),
+      array (
+        'label' => 'Goofy',
+        'value' => 'goofy',
+        'checked' => FALSE,
+      ),
+      array (
+        'label' => 'Conan the Barbarian',
+        'value' => 'conan',
+        'checked' => FALSE,
+      )))
+    ->add_submit('submit', 'Save')
+    ->add_reset('reset', 'Cancel');
 
-    function edit()
+    if (!$form->validate())
     {
-      /*
-      * load the spark
-      * set default form values if pre-population is desired
-      */
-
-      $this->load->spark( 'formbuilder/x.x');
-
-      /*
-      * prepopulate with your data.
-      * in this example we are editing a user
-      */
-
-      $q = $this->db->where( 'id', 3 )->limit( 1 )->get( 'users' );
-      $this->formbuilder->defaults = $q->row_array();
-
-      $this->load->view( 'user/edit' );
+      echo $form; // magic method to print the form out straight away, or
+      //echo $myform->render_form();
+    }
+    else
+    {
+      echo "Nice form!";
     }
 
-## Now setup your view
+Some nice feature that will soon be documented in further details:
 
-    <?php
-    /*
-    * the formbuilder->defaults array pre-populates the form
-    * if there are form validation errors on submit, they will be shown as well.
-    */
-    echo $this->formbuilder->open( 'user/edit_save', FALSE, array('id' => 'myform') );
-    echo $this->formbuilder->text( 'username', 'Username' );
-    echo $this->formbuilder->text( 'first_name', 'Your First Name' );
-    echo $this->formbuilder->text( 'last_name', 'Your Last Name' );
-    echo $this->formbuilder->password( 'password', 'Password' );
-    echo $this->formbuilder->close();
-    ?>
+- Validator extends standard CI one so that you could put your custom validation callbacks in the model. Just add `"callback_myfunction_model[mymodel]"` into validation rules to invoke `$this->mymodel->myfunction()` as a validation method.
+- Renderer and validator could be rewritten if necessary: I plan to provide an interface to inherit from withh the stable release. The goal is to allow anybody to implement other renderers (for integration with template engines and such) and maybe more advanced validators. Even if decoupling is not perfect yet, a couple of public functions are already available to inject your custom objects:
 
-The above produces the following markup...
+    $form = $this->formbuilder->new_form();
 
-    <form action="http://sparks.local:8888/index.php/user/edit_save" method="post" accept-charset="utf-8" id="myform">
-      <div class="formRow text">
-        <label for="myform-username">Username</label>
-        <input type="text" name="username" value="" id="myform-username"/>
-      </div>
+    $form->set_validator(new Custom_validator($form));
+    $form_>set_renderer(new Custom_renderer($form));
 
-      <div class="formRow text">
-        <label for="myform-first_name">Your First Name</label>
-        <input type="text" name="first_name" value="" id="myform-first_name"/>
-      </div>
-      <div class="formRow text">
-        <label for="myform-last_name">Your Last Name</label>
-        <input type="text" name="last_name" value="" id="myform-last_name"/>
-      </div>
+- You could print out the whole form just echoing the object or treating it as a string; still you could access following methods:
 
-      <div class="formRow password">
-        <label for="myform-password">Password</label>
-        <input type="password" name="password" value=""  id="myform-password"/>
-      </div>
-    </form> <!-- closing myform -->
+    echo $form->render_form(); // echoes the form, equals echo $form;
+    echo $form->render_group('profile'); // echoes specified fieldset;
+    echo $form->render_field('name'); // echoes specified field, wrapped by chosen wrapper tags (specified in config file)
+    echo $form->render_raw_field('name'); //echoes specified field, without wrapper but full with label and error
 
-If no form id is specified, form ids will have to be specified manually, otherwise fields won't have id attribute and related labels won't have for attributes for them.
+- In config file you could chose label positions for checkboxed and radiobuttons (before/after/none), validation error method (general/field-by-field) and error messages positions (before/after form open; before/after form close OR before field label/between label and field/after field). You could also configure error wrapper tags and classes.
 
+More to come in a short while.
 
-# Formbuilder Method Documentation
-## open method
-    /*
-    * $action the controller/action url the form will post to
-    * $multipart ( optional ) if you are posting files, set to true
-    * $params ( optional ) additional params for the <form> tag
-    */
+# Contacts
 
-    function open( $action, $multipart=FALSE, $params=array() )...
-    // example
-      echo $this->formbuilder->open( 'user/edit_save', FALSE, array( 'id'=>'myUserEditForm', 'class'=>'userForm' ));
+- [Log Issues or Suggestions](https://github.com/stickgrinder/formbuilder/issues)
+- [Follow me on Twitter](http://twitter.com/stickgrinder)
 
-## text method ( produces an &lt;input type="text"&gt; form field )
-    /*
-    * $var the field you are editing
-    * $label ( optional ) the label shown on the <label>. If NULL <label> will be omited.
-    * $lblOptions ( optional ) additional params for the <label> tag
-    * $fieldOptions ( optional ) additional params for the <input> tag
-    */
-
-    text( $var, $label=null, $lblOptions=null, $fieldOptions=null )...
-    // example
-    echo $this->formbuilder->text( 'username', 'Username', array( 'id'=>'usernameLabel', 'class'=>'userLbl' ), array( 'id'=>'usernameInput', 'class'=>'userInput' ));
-
-## hidden method ( produces an &lt;input type="hidden"&gt; form field )
-    /*
-    * $var the field you are editing
-    * $default ( optional ) will override any formbuilder->defaults if any and set to this value
-    */
-
-    function hidden( $var, $default='' )...
-    // example
-    echo $this->formbuilder->hidden( 'id', $user[ 'id' ] );
-
-## textarea method ( produces an &lt;textarea&gt; form field )
-    /*
-    * $var the field you are editing
-    * $label ( optional ) the label shown on the <label>. If NULL <label> will be omited.
-    * $lblOptions ( optional ) additional params for the <label> tag
-    * $fieldOptions ( optional ) additional params for the <input> tag
-    */
-
-    textarea($var, $label=null, $lblOptions=null, $fieldOptions=null )...
-    // example
-    echo $this->formbuilder->textarea( 'user_bio', 'User Biography' );
-
-## password method ( produces an &lt;input type="password"&gt; form field )
-    /*
-    * $var the field you are editing
-    * $label ( optional ) the label shown on the <label>. If NULL <label> will be omited.
-    * $lblOptions ( optional ) additional params for the <label> tag
-    * $fieldOptions ( optional ) additional params for the <input> tag
-    */
-
-    password($var, $label=null, $lblOptions=null, $fieldOptions=null )...
-    // example
-    echo $this->formbuilder->password( 'password', 'Password' );
-
-## checkbox method ( produces an &lt;input type="checkbox"&gt; form field )
-    /*
-    * $var the field you are editing
-    * $label ( optional ) the label shown on the <label>. If NULL <label> will be omited.
-    * $value the value of the field usually TRUE / FALSE
-    * $default ( optional ) if this should be initial checked if POST or defaults have not overriden
-    * $lblOptions ( optional ) additional params for the <label>
-    * $fieldOptions ( optional ) additional params for the <input>
-    */
-
-    function checkbox( $var, $label, $value, $default=FALSE, $lblOptions=null, $fieldOptions=null )...
-    // example
-    echo $this->formbuilder->checkbox( 'opt_in_email', 'Email Updates?', TRUE, TRUE );
-
-## radio method ( produces an &lt;input type="radio"&gt; form field )
-    /*
-    * $var the field you are editing
-    * $label ( optional ) the label shown on the <label>. If NULL <label> will be omited.
-    * $value the value of the field usually TRUE / FALSE
-    * $default ( optional ) if this should be initial checked if POST or defaults have not overriden
-    * $lblOptions ( optional ) additional params for the <label>
-    * $fieldOptions ( optional ) additional params for the <input>
-    */
-
-    function radio( $var, $label, $value, $default=FALSE, $lblOptions=null, $fieldOptions=null )...
-    // example
-    echo $this->formbuilder->radio( 'how_you_heard', 'Radio', 'radio', TRUE );
-    echo $this->formbuilder->radio( 'how_you_heard', 'Television', 'television');
-
-## radio method ( produces an &lt;input type="radio"&gt; form field )
-    /*
-    * $var the field you are editing
-    * $label ( optional ) the label shown on the <label>. If NULL <label> will be omited.
-    * $options array of options for the <option> tags
-    * $default ( optional ) if this is set and there are no $_POST or $default values, this item will be selected
-    * $lblOptions ( optional ) additional params for the <label>
-    * $fieldOptions ( optional ) additional params for the <input>
-    */
-
-    function drop_down( $var, $label, $options=array(), $default='', $lblOptions=null, $fieldOptions=null )...
-    // example
-    echo $this->formbuilder->drop_down( 'country', 'Country', array( 'us'=>'United States', 'ca'=>'Canada' ), 'ca' );
-
-## table method ( produces entire form based on a Database table )
-    /*
-    * $action the form action, where the form will post to.
-    * $table the database table you are building a form for.
-    * $omit ( optional ) fields you would not like to show up in the form
-    */
-
-    function table( $action, $table, $omit=array() )...
-    // example
-    echo $this->formbuilder->table( 'user/edit_save', 'media_items', array( 'created_at', 'updated_at' ) );
-
-- [Log Issues or Suggestions](https://github.com/dperrymorrow/formbuilder/issues)
-- [Follow me on Twitter](http://twitter.com/dperrymorrow)
+Many thanks to @dperrymorrow for his first version of Formbuilder! :) Kudos!
