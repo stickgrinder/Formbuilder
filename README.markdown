@@ -76,7 +76,7 @@ Some nice feature that will soon be documented in further details:
 **Q:** How does FB compare to FormGen (issue #4)? Benefits of both?
 **A:** A complete comparison with other solutions will hopefully be available in the upcoming docs. In the meantime, take a look here: https://github.com/stickgrinder/Formbuilder/issues/5
 
-**Q:** Where could I find AFB 1.0?
+**Q:** Where could I find AFB 1.0?  
 **A:** Nowhere. AFB was formerly named Formbuilder 2.0 since it was intended as a new version of David Perry's Frombuilder. I decided to keep numbering from 2 on for the following reasons:
   * I always do a lot of noise about what I do, so someone was expecting a 2.0 version of Formbuilder. I don't want to confuse anyone.
   * David Perry made me realize that I was fed up with CI's form helpers, bloated controllers and so on. I wanted FB's legacy to stand out.
