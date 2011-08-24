@@ -1,6 +1,6 @@
-# Formbuilder 2.0
+# Advanced Formbuilder
 
-This 2.0 version is a from-scratch rewrite of original @dperrymorrow's Formbuilder.
+This _Advanced_ version was intended as a from-scratch rewrite of original @dperrymorrow's Formbuilder, but it quickly evolved in a completely different beast.
 Its goal is to create a full-fledged form-factory able to define, render and validate a form, providing at the very same time a fluent interface so that form creation is easy to write and read.
 Full doc will be available soon, in the meantime here is a simple example.
 
@@ -68,11 +68,30 @@ Some nice feature that will soon be documented in further details:
 
 - In config file you could chose label positions for checkboxed and radiobuttons (before/after/none), validation error method (general/field-by-field) and error messages positions (before/after form open; before/after form close OR before field label/between label and field/after field). You could also configure error wrapper tags and classes.
 
-More to come in a short while.
+# Questions and Answers
+
+**Q:** This doc is crap! When REAL docs will be available?
+**A:** Complete CI-Styled docs will be released together with upcoming version 2.1, that will feature some more fluent-magic and features.
+
+**Q:** How does FB compare to FormGen (issue #4)? Benefits of both?
+**A:** A complete comparison with other solutions will hopefully be available in the upcoming docs. In the meantime, take a look here: https://github.com/stickgrinder/Formbuilder/issues/5
+
+**Q:** Where could I find AFB 1.0?
+**A:** Nowhere. AFB was formerly named Formbuilder 2.0 since it was intended as a new version of David Perry's Frombuilder. I decided to keep numbering from 2 on for the following reasons:
+  * I always do a lot of noise about what I do, so someone was expecting a 2.0 version of Formbuilder. I don't want to confuse anyone.
+  * David Perry made me realize that I was fed up with CI's form helpers, bloated controllers and so on. I wanted FB's legacy to stand out.
+  * My evil plot is for you to ask, so that I could draw attention to me and feel renowned! :D
 
 # Contacts
 
 - [Log Issues or Suggestions](https://github.com/stickgrinder/formbuilder/issues)
 - [Follow me on Twitter](http://twitter.com/stickgrinder)
 
-Many thanks to @dperrymorrow for his first version of Formbuilder! :) Kudos!
+# Credits
+
+Many thanks to @dperrymorrow for inspiring me with his original Formbuilder! :) Kudos!
+Many thanks to @philsturgeon for writing DBAD public licence.
+
+# License
+
+_Advanced Formbuilder_ is released under the "Don't Be a Dick Public License", which you can read in all its glory here: http://philsturgeon.co.uk/code/dbad-license
