@@ -24,7 +24,7 @@ class FB_Renderer
     // set configuration
     $this->_config = $config;
 
-    $this->_wrapper_open = '<'.$this->_config['field_wrapper_tag'].' class="'.$this->_config['field_wrapper_classes'].'">';
+    $this->_wrapper_open = '<'.$this->_config['field_wrapper_tag'].' class="'.$this->_config['field_wrapper_classes'].' @@more_classes@@" @@more_attr@@>';
     $this->_wrapper_close = '</'.$this->_config['field_wrapper_tag'].'>';
   }
 
@@ -204,11 +204,7 @@ class FB_Renderer
     //return '<pre>'.print_r($this->_form_structure, TRUE);
 
     $output[10] =
-      $this->_form_structure['properties']['is_multipart']
-      ?
-      form_open_multipart($this->_form_structure['properties']['action'])
-      :
-      form_open($this->_form_structure['properties']['action']);
+      $this->render_form_tag();
 
     $output[20] = '';
 
@@ -221,7 +217,7 @@ class FB_Renderer
         $output[20] .= $this->render_field($name);
     }
 
-    $output[30] = form_close();
+    $output[30] = $this->render_form_close();
 
     // check for errors
     if ( $this->_config['error_show'] === FB_R_ERROR_SHOW_FORM )
@@ -233,6 +229,33 @@ class FB_Renderer
     return implode('', $output);
   }
 
+  public function render_form_tag()
+  {
+      return $this->_form_structure['properties']['is_multipart']
+      ?
+      form_open_multipart(
+        $this->_form_structure['properties']['action'],
+        $this->_form_structure['properties']['attributes'],
+        (isset($this->_form_structure['properties']['max_file_size']) && $this->_form_structure['properties']['max_file_size'] > 0) ?
+          array('MAX_FILE_SIZE' => $this->_form_structure['properties']['max_file_size'])
+          :
+          NULL
+      )
+      :
+      form_open(
+        $this->_form_structure['properties']['action'],
+        $this->_form_structure['properties']['attributes'],
+        (isset($this->_form_structure['properties']['max_file_size']) && $this->_form_structure['properties']['max_file_size'] > 0) ?
+          array('MAX_FILE_SIZE' => $this->_form_structure['properties']['max_file_size'])
+          :
+          NULL
+      );
+  }
+
+  public function render_form_close()
+  {
+    return form_close();
+  }
 
   public function render_group($group_name = FALSE, $wrapped = TRUE)
   {
@@ -240,6 +263,10 @@ class FB_Renderer
     if (! $group_name || ! isset($this->_form_structure['items'][$group_name.'_group'])) return FALSE;
 
     $group = $this->_form_structure['items'][$group_name.'_group'];
+
+    // add group name to attributes while rendering
+    $group['attributes']['class'] .= ' '.$group['name'];
+    if (empty($group['attributes']['id'])) $group['attributes']['id'] = $group['name'];
 
     $output = form_fieldset($group['legend'], $group['attributes']);
 
@@ -267,21 +294,61 @@ class FB_Renderer
       $field_name = $steps[1];
     }
 
-    if (! empty($group_name) )
+    if (!empty($group_name)) {
       $field = $this->_form_structure['items'][$group_name.'_group']['items'][$field_name];
-
-    else
+    } else {
       $field = $this->_form_structure['items'][$field_name];
+    }
 
     // ok, now let's see if we could render this stuff!
     $rendering_method = '_render_'.$field['type'].'_field';
     if (method_exists($this, $rendering_method))
     {
 
+      // prepare array for wrapper classes (maybe it won't be used...)
+      $more_classes = array();
+
+      // if field has validation errors, add proper class to it
+      if ( strlen($this->form_error($field_name)) > 0 ) {
+        $field['attributes']['class'] .= ' '.$this->_config['error_classes'];
+        $more_classes[] = $this->_config['error_classes'];
+      }
+
+      // add required classes if field is required
+      if (isset($field['rules']) && strpos($field['rules'], 'required') !== FALSE)
+      {
+        $field['attributes']['class'] .= ' '.$this->_config['required_classes'];
+        $more_classes[] = $this->_config['required_classes'];
+      }
+
+
       $output = $this->$rendering_method($field);
 
       // last but not least, wrap output with
-      if ($wrapped) $output = $this->_wrapper_open . $output . $this->_wrapper_close;
+      if ($wrapped) {
+
+        // work on a copy, since we'll screw it a bit
+        $wrapper_open = $this->_wrapper_open;
+
+        // compose classes for wrapper
+        $more_classes[] = $field['attributes']['id'];
+        if ($this->_config['field_wrapper_add_field_classes'])
+          $more_classes[] = $field['attributes']['class'];
+        else
+          $more_classes[] = $field['type'];
+
+        // add them as a string in right place
+        $more_classes = implode(' ', $more_classes);
+        $wrapper_open = str_replace('@@more_classes@@', trim($more_classes), $wrapper_open);
+
+        if ($this->_config['field_wrapper_id_suffix'])
+          $wrapper_open = str_replace('@@more_attr@@', ' id="'.$field['attributes']['id'].$this->_config['field_wrapper_id_suffix'].'"', $wrapper_open);
+
+        $output =
+        $wrapper_open .
+          $output .
+        $this->_wrapper_close;
+      }
 
       return $output."\n";
     }
@@ -412,7 +479,6 @@ class FB_Renderer
         'attributes' => $attributes,
       );
       $subfield['attributes']['id'] .= '_'.$i++;
-
       $output .= $this->_render_radiobutton_field($subfield);
     }
 
@@ -482,6 +548,20 @@ class FB_Renderer
     {
       $output[$this->_config['error_position']] = $this->form_error($name);
     }
+
+    ksort($output);
+    return implode('', $output);
+  }
+
+  private function _render_hidden_field($field) {
+    // ouput a simple hidden field
+    extract($field);
+
+    $output[20] = form_hidden(
+      $name,
+      $this->set_value($name, $value),
+      $this->_stringify_attributes($attributes)
+    );
 
     ksort($output);
     return implode('', $output);

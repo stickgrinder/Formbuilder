@@ -26,6 +26,8 @@ class FB_Creator
 
     $this->make_multipart(FALSE);
     $this->set_action('');
+    $this->set_attributes(array());
+    $this->set_max_file_size(0); // 0 for no limit
 
     $this->_last_group = FALSE;
     $this->_last_field = FALSE;
@@ -69,10 +71,24 @@ class FB_Creator
     return (array)$this->_form_structure;
   }
 
+  public function get_groups() {
+    $groups = array();
+    $items = $this->_form_structure['items'];
+
+    foreach ($items as $item_name => $item) {
+      if ($item['type'] === 'group') {
+        $groups[$item_name] = $item;
+      }
+    }
+
+    return $groups;
+  }
+
   public function set_form_structure( array $form_structure )
   {
-    if (is_array($form_structure) && ! empty($form_structure))
+    if (is_array($form_structure) && ! empty($form_structure)) {
       $this->_form_structure = $form_structure;
+    }
 
     return $this;
   }
@@ -107,8 +123,6 @@ class FB_Creator
     return FALSE;
   }
 
-
-
   public function render_field( $field_name = FALSE )
   {
 
@@ -117,7 +131,6 @@ class FB_Creator
     // is renderer already set and is it capable of getting job done?
     if (is_object($this->_renderer))
     {
-
       // tell it about our form and ask for some cooked tags
       $this->_renderer->set_form_structure($this->_form_structure);
       return $this->_renderer->render_field($field_name);
@@ -139,6 +152,40 @@ class FB_Creator
       // tell it about our form and ask for some lovely tags
       $this->_renderer->set_form_structure($this->_form_structure);
       return $this->_renderer->render_group($group_name);
+
+    }
+
+    // if renderer is not set, nothing to do
+    return FALSE;
+  }
+
+  public function render_form_tag()
+  {
+
+    // is renderer already set and is it capable of getting job done?
+    if (is_object($this->_renderer))
+    {
+
+      // tell it about our form and ask for some lovely tags
+      $this->_renderer->set_form_structure($this->_form_structure);
+      return $this->_renderer->render_form_tag();
+
+    }
+
+    // if renderer is not set, nothing to do
+    return FALSE;
+  }
+
+  public function render_form_close()
+  {
+
+    // is renderer already set and is it capable of getting job done?
+    if (is_object($this->_renderer))
+    {
+
+      // tell it about our form and ask for some lovely tags
+      $this->_renderer->set_form_structure($this->_form_structure);
+      return $this->_renderer->render_form_close();
 
     }
 
@@ -228,6 +275,14 @@ class FB_Creator
     return $this;
   }
 
+  public function set_max_file_size( $size = FALSE )
+  {
+    if ($size && is_integer($size))
+      $this->_form_structure['properties']['max_file_size'] = $size;
+
+    return $this;
+  }
+
   public function set_properties ( $action = NULL, $is_multipart = FALSE, $attributes = NULL )
   {
     $this->set_action($action);
@@ -277,7 +332,7 @@ class FB_Creator
     if (!isset($field['name']) || empty($field['name'])) return $this;
 
     $name = $field['name'];
-    $attributes = $field['attributes'];
+    $attributes = isset($field['attributes']) ? $field['attributes'] : array();
 
     // create a unique if if none is defined
     if (!isset($attributes['id']) || empty($attributes['id']) || trim($attributes['id']) == '')
@@ -290,7 +345,10 @@ class FB_Creator
       else
         $this->_unique_ids_registry[$field_id]++;
 
-      $attributes['id'] = $field_id . $this->_unique_ids_registry[$field_id];
+      if ($this->_config['auto_id_integer_append'])
+        $attributes['id'] = $field_id . $this->_unique_ids_registry[$field_id];
+      else
+        $attributes['id'] =  preg_replace('/_$/', '', $field_id);
     }
 
     // assign new attributes back to the field
@@ -319,22 +377,19 @@ class FB_Creator
 
     // if attribute is a string, explode it into an array, so that we could manage them
     // more easily
+
     if ( is_string($attributes) )
     {
-
       // let PHP do the hard work breaking down attributes one by one :)
       $xml = simplexml_load_string( '<dummy ' . $attributes . ' />' );
       $attributes = array();
       foreach ($xml->attributes() as $name=>$value)
       {
-
         // if attribute is not empty, store it
         $value = (array)$value;
         if (isset($value[0]) && !empty($value[0]))
           $attributes[$name] = $value[0];
-
       }
-
     }
 
     // if attribute is an array already, go on but remember to normalize attribute case
@@ -342,8 +397,9 @@ class FB_Creator
 
     // maybe no class has been given, so class key is not set. Let's set it
     // and...
-    if (! isset($attributes['class']) )
+    if (!isset($attributes['class'])) {
       $attributes['class'] = '';
+    }
 
     // ... merge user classes and FB classes
     if ( isset($additional_classes) && is_array($additional_classes) )
@@ -368,7 +424,7 @@ class FB_Creator
     return $this->_add_field( array(
       'type' => 'hidden',
       'name' => $name,
-      'value' => $value,
+      'value' => $value
     ));
   }
 
